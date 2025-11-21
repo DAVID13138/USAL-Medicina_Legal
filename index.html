@@ -1,0 +1,2441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>CSI: Código Forense</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #050712;
+      --bg-alt: #0a1020;
+      --accent: #26e2ff;
+      --accent-soft: rgba(38, 226, 255, 0.2);
+      --danger: #ff3366;
+      --success: #4dff87;
+      --card-bg: rgba(10, 16, 40, 0.95);
+      --text-main: #f5f7ff;
+      --text-muted: #9aa2c3;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.6);
+      --radius-xl: 20px;
+      --transition-fast: 0.18s ease-out;
+      --transition-med: 0.25s ease-out;
+      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-main);
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at top left, rgba(38, 226, 255, 0.15), transparent 60%),
+        radial-gradient(circle at bottom right, rgba(255, 51, 102, 0.18), transparent 60%),
+        radial-gradient(circle at top right, rgba(0, 255, 163, 0.12), transparent 60%),
+        var(--bg);
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1200px;
+      margin: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
+      gap: 18px;
+      padding: 22px;
+      border-radius: var(--radius-xl);
+      background: linear-gradient(145deg, rgba(8, 10, 30, 0.98), rgba(5, 8, 22, 0.98));
+      box-shadow: var(--shadow-soft);
+      border: 1px solid var(--border-subtle);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .screen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(115deg, rgba(38, 226, 255, 0.08), transparent 55%),
+        radial-gradient(circle at 15% 10%, rgba(77, 255, 135, 0.12), transparent 55%);
+      mix-blend-mode: screen;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .screen-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .screen.active {
+      display: flex;
+      animation: fadeInUp 0.45s var(--transition-med);
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    h1 { font-size: 1.9rem; display: flex; align-items: center; gap: 8px; }
+
+    h1 span.game-tag {
+      font-size: 0.8rem;
+      color: var(--accent);
+      background: rgba(38, 226, 255, 0.08);
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(38, 226, 255, 0.4);
+    }
+
+    h2 { font-size: 1.3rem; color: var(--accent); }
+
+    p { margin: 0; color: var(--text-muted); }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      gap: 20px;
+      align-items: center;
+    }
+
+    .hero-visual {
+      border-radius: 24px;
+      padding: 16px;
+      background: radial-gradient(circle at top, rgba(38, 226, 255, 0.18), transparent 60%) #050713;
+      border: 1px solid rgba(38, 226, 255, 0.35);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-visual::after {
+      content: "CSI";
+      position: absolute;
+      bottom: -20px;
+      right: -10px;
+      font-size: 4.5rem;
+      font-weight: 800;
+      color: rgba(38, 226, 255, 0.04);
+      letter-spacing: 0.25em;
+    }
+
+    .comic-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      margin-bottom: 10px;
+    }
+
+    .avatar-detective,
+    .avatar-doctor {
+      flex: 1;
+      height: 120px;
+      border-radius: 18px;
+      background: linear-gradient(160deg, #1c243b, #050712);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .avatar-detective::before,
+    .avatar-doctor::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(38, 226, 255, 0.3), transparent 60%),
+        radial-gradient(circle at 80% 120%, rgba(255, 51, 102, 0.3), transparent 60%);
+      opacity: 0.8;
+      mix-blend-mode: screen;
+    }
+
+    .avatar-detective::after {
+      content: "Detective";
+      position: absolute;
+      bottom: 8px;
+      left: 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2px 6px;
+      border-radius: 999px;
+    }
+
+    .avatar-doctor::after {
+      content: "Médico Forense";
+      position: absolute;
+      bottom: 8px;
+      left: 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2px 6px;
+      border-radius: 999px;
+    }
+
+    .hero-metadata {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .badge-accent {
+      border-color: rgba(38, 226, 255, 0.7);
+      background: rgba(38, 226, 255, 0.12);
+      color: var(--accent);
+    }
+
+    .btn {
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-main);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast), opacity var(--transition-fast);
+    }
+
+    .btn-primary {
+      background: radial-gradient(circle at 0 0, #26e2ff, #00b3ff);
+      border-color: rgba(38, 226, 255, 0.9);
+      box-shadow: 0 0 18px rgba(38, 226, 255, 0.5);
+      color: #020308;
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .btn-danger {
+      background: radial-gradient(circle at 0 0, #ff3366, #ff0044);
+      border-color: rgba(255, 51, 102, 0.8);
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .btn:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 20px rgba(38, 226, 255, 0.45);
+    }
+
+    .btn-icon { font-size: 1.1rem; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .row { display: flex; flex-wrap: wrap; gap: 16px; }
+
+    .col { flex: 1 1 250px; min-width: 0; }
+
+    .card {
+      border-radius: 18px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      padding: 14px 16px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    .card-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+    }
+
+    select, input[type="text"], input[type="number"] {
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      background: rgba(6, 10, 30, 0.9);
+      color: var(--text-main);
+      outline: none;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(38, 226, 255, 0.35);
+    }
+
+    .player-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .player-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .player-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .avatar-pill {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0, rgba(38, 226, 255, 0.7), rgba(4, 10, 25, 1));
+      border: 1px solid rgba(38, 226, 255, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .subtitle { font-size: 0.85rem; color: var(--text-muted); }
+
+    .status-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .status-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 10px rgba(38, 226, 255, 0.8);
+    }
+
+    .timer {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .timer-value { font-weight: 700; color: var(--accent); }
+
+    .question-card {
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: radial-gradient(circle at 0 0, rgba(38, 226, 255, 0.25), transparent 55%) rgba(10, 16, 40, 0.95);
+      border: 1px solid rgba(38, 226, 255, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .question-card::after {
+      content: "Forense";
+      position: absolute;
+      top: -14px;
+      right: -5px;
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.02);
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+    }
+
+    .question-text { font-size: 1.1rem; margin-bottom: 10px; }
+
+    .answers { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+
+    .answer-btn { width: 100%; justify-content: flex-start; padding-inline: 12px; }
+
+    .answer-prefix { display: inline-flex; width: 20px; justify-content: center; opacity: 0.7; }
+
+    .question-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; }
+
+    .clues-list { list-style: none; padding-left: 0; margin: 8px 0 0; font-size: 0.85rem; color: var(--text-muted); }
+
+    .clues-list li::before { content: "•"; margin-right: 6px; color: var(--accent); }
+
+    .clues-list li.unlocked { color: var(--success); }
+
+    .log {
+      max-height: 140px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      padding-right: 4px;
+    }
+
+    .log-entry { margin-bottom: 4px; }
+    .log-entry strong { color: var(--accent); }
+
+    .pill {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .pill-success { border-color: var(--success); color: var(--success); }
+    .pill-danger { border-color: var(--danger); color: var(--danger); }
+
+    .scoreboard {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .scoreboard th,
+    .scoreboard td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      text-align: left;
+    }
+
+    .scoreboard th {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .score-winner { color: var(--success); font-weight: 700; }
+
+    .highlight-correct {
+      box-shadow: 0 0 20px rgba(77, 255, 135, 0.85) !important;
+      border-color: var(--success) !important;
+    }
+
+    .highlight-wrong {
+      box-shadow: 0 0 20px rgba(255, 51, 102, 0.85) !important;
+      border-color: var(--danger) !important;
+    }
+
+    .suspects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .suspect-card {
+      padding: 10px;
+      border-radius: 14px;
+      background: rgba(8, 10, 25, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.85rem;
+    }
+
+    .suspect-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 20% 0, rgba(255, 255, 255, 0.4), rgba(4, 10, 30, 1));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      margin-right: 6px;
+    }
+
+    .suspect-name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .selection-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .selection-row { display: flex; gap: 8px; align-items: center; }
+
+    .music-toggle {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .music-toggle input { accent-color: var(--accent); }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      .hero { grid-template-columns: minmax(0, 1fr); }
+      h1 { font-size: 1.5rem; }
+      .screen { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SPLASH -->
+  <section id="splash-screen" class="screen active">
+    <div class="screen-content">
+      <div class="hero">
+        <div>
+          <h1>
+            CSI: Código Forense
+            <span class="game-tag">Juego Online</span>
+          </h1>
+          <p style="margin-top:6px;">
+            Ponte en la piel de un <strong>detective</strong> y un <strong>médico forense</strong> para resolver casos
+            criminales de laboratorio: preguntas de medicina legal, pistas desbloqueables y una acusación final.
+          </p>
+          <div class="hero-metadata">
+            <span class="badge badge-accent">2–4 jugadores</span>
+            <span class="badge">Dificultad media</span>
+            <span class="badge">Estilo CSI moderno</span>
+          </div>
+          <div class="actions" style="margin-top:14px;">
+            <button class="btn btn-primary" id="btn-splash-continue">
+              <span class="btn-icon">▶</span> Continuar
+            </button>
+            <button class="btn btn-ghost" id="btn-splash-how">
+              ¿Cómo se juega?
+            </button>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="comic-row">
+            <div class="avatar-detective"></div>
+            <div class="avatar-doctor"></div>
+          </div>
+          <p class="subtitle">
+            Escena de crimen, luces policiales, bisturí, huellas dactilares, perfil toxicológico…  
+            <strong>Cada acierto ilumina una nueva pista.</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONFIGURACIÓN -->
+  <section id="config-screen" class="screen">
+    <div class="screen-content">
+      <h2>Configurar partida</h2>
+      <p>Elige tiempo por pregunta, duración de la partida y número de jugadores. Después, asigna nombre y avatar.</p>
+
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-title">Tiempo por pregunta</div>
+            <div class="input-group">
+              <label for="select-time">Segundos</label>
+              <select id="select-time">
+                <option value="15">15 s (difícil)</option>
+                <option value="30" selected>30 s (medio)</option>
+                <option value="45">45 s (fácil)</option>
+                <option value="60">60 s (entrenamiento)</option>
+              </select>
+            </div>
+
+            <div class="card-title">Modo de partida</div>
+            <div class="input-group">
+              <label for="select-mode">Duración</label>
+              <select id="select-mode">
+                <option value="15">Corta (15 preguntas)</option>
+                <option value="30" selected>Media (30 preguntas)</option>
+                <option value="50">Larga (50 preguntas)</option>
+              </select>
+            </div>
+
+            <div class="card-title">Número de jugadores</div>
+            <div class="input-group">
+              <label for="select-players">Jugadores</label>
+              <select id="select-players">
+                <option value="2" selected>2 jugadores</option>
+                <option value="3">3 jugadores</option>
+                <option value="4">4 jugadores</option>
+              </select>
+            </div>
+
+            <label class="music-toggle">
+              <input type="checkbox" id="toggle-music" checked />
+              Música ambiente suave
+            </label>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card">
+            <div class="card-title">Jugadores y avatares</div>
+            <p class="subtitle">Pon un nombre o déjalo por defecto. El avatar representa su rol forense.</p>
+            <div id="player-list" class="player-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-ghost" id="btn-config-back">← Volver</button>
+        <button class="btn btn-primary" id="btn-start-game">
+          <span class="btn-icon">⚡</span> Comenzar partida
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- JUEGO -->
+  <section id="game-screen" class="screen">
+    <div class="screen-content">
+      <div class="status-bar">
+        <div class="status-group">
+          <div class="dot"></div>
+          <span id="status-player"></span>
+          <span class="pill" id="status-case-title"></span>
+        </div>
+        <div class="status-group">
+          <div class="timer">
+            ⏱ <span class="timer-value" id="timer-value">30</span>s
+          </div>
+          <span class="pill" id="status-progress">Pregunta 1 / ?</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <div class="question-card" id="question-card">
+            <div class="question-meta" id="question-category">Medicina legal</div>
+            <div class="question-text" id="question-text">
+              Cargando pregunta…
+            </div>
+            <div class="answers" id="answers-container"></div>
+            <div class="question-meta" id="question-footer">
+              Acierta para desbloquear pistas del caso activo.
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card" id="clues-card">
+            <div class="card-title">Pistas del caso</div>
+            <p class="subtitle" id="case-summary"></p>
+            <ul class="clues-list" id="clues-list"></ul>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <div class="card-title">Marcador</div>
+            <div class="log" id="log"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-ghost" id="btn-skip-question">Saltar pregunta</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACUSACIÓN FINAL -->
+  <section id="accusation-screen" class="screen">
+    <div class="screen-content">
+      <h2>Acusación final</h2>
+      <p>Tienes <strong>30 segundos</strong> para pensar. Cada jugador elige a quién acusa como culpable.</p>
+
+      <div class="status-bar">
+        <div class="status-group">
+          <div class="dot"></div>
+          <span>Caso activo:</span>
+          <span class="pill" id="acc-case-title"></span>
+        </div>
+        <div class="status-group">
+          <div class="timer">
+            ⏱ <span class="timer-value" id="acc-timer-value">30</span>s
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-title">Resumen del caso</div>
+            <p class="subtitle" id="acc-case-summary"></p>
+            <ul class="clues-list" id="acc-clues-list"></ul>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card">
+            <div class="card-title">Sospechosos</div>
+            <div class="suspects-grid" id="suspects-grid"></div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <div class="card-title">Elección de cada jugador</div>
+            <div class="selection-grid" id="selection-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="btn-confirm-accusations">
+          📌 Confirmar acusaciones
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTADOS -->
+  <section id="results-screen" class="screen">
+    <div class="screen-content">
+      <h2>Resultados de la partida</h2>
+      <p>+1 por respuesta correcta, +3 por acertar culpable, –1 por acusación incorrecta.</p>
+
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-title">Clasificación</div>
+            <table class="scoreboard" id="results-table"></table>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card">
+            <div class="card-title">Premio simbólico</div>
+          <p class="subtitle" id="prize-text">
+              El ganador obtiene una bolsa de golosinas forense y una caja de lápices fluorescentes.
+            </p>
+            <div class="chip-row" style="margin-top:10px;">
+              <span class="badge badge-accent">Revancha</span>
+              <span class="badge">Cambiar modo</span>
+              <span class="badge">Nuevo caso aleatorio</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="btn-play-again">Jugar otra vez</button>
+        <button class="btn btn-ghost" id="btn-back-to-config">Cambiar configuración</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Sonidos (reemplaza src por tus archivos reales si quieres audio) -->
+<audio id="sound-correct" src="correct.mp3" preload="auto"></audio>
+<audio id="sound-wrong" src="wrong.mp3" preload="auto"></audio>
+<audio id="bg-music" src="bg-music.mp3" preload="auto" loop></audio>
+
+<script>
+  // --- Datos base ---
+
+  const AVATARS = [
+    { key: "medico", label: "Médico forense", emoji: "🩺" },
+    { key: "detective", label: "Detective criminalista", emoji: "🕵️" },
+    { key: "laboratorio", label: "Técnico de laboratorio", emoji: "🧪" },
+    { key: "patologo", label: "Patólogo", emoji: "⚕️" },
+    { key: "inspector", label: "Inspector jefe", emoji: "👮" },
+    { key: "analista", label: "Analista de escena", emoji: "🔬" }
+  ];
+
+  // 75 PREGUNTAS COMPLETAS
+  const QUESTIONS = [
+    // 1–10 ya vistos:
+    {
+      id: 1,
+      text: "¿Qué indica principalmente la rigidez cadavérica?",
+      category: "Medicina legal",
+      answers: [
+        { text: "Tiempo aproximado desde la muerte", correct: true },
+        { text: "Tipo de arma utilizada", correct: false },
+        { text: "Grupo sanguíneo", correct: false }
+      ]
+    },
+    {
+      id: 2,
+      text: "La lividez cadavérica se observa mejor en:",
+      category: "Tanatología",
+      answers: [
+        { text: "Zonas declives del cuerpo", correct: true },
+        { text: "Palmas de las manos", correct: false },
+        { text: "Cuero cabelludo", correct: false }
+      ]
+    },
+    {
+      id: 3,
+      text: "¿Qué revela el patrón de salpicadura de sangre?",
+      category: "Criminalística",
+      answers: [
+        { text: "Mecanismo del ataque", correct: true },
+        { text: "Edad de la víctima", correct: false },
+        { text: "Grupo sanguíneo exacto", correct: false }
+      ]
+    },
+    {
+      id: 4,
+      text: "¿Qué instrumento se usa para observar fibras textiles?",
+      category: "Fibras / Textil",
+      answers: [
+        { text: "Microscopio", correct: true },
+        { text: "Termómetro", correct: false },
+        { text: "Bisturí", correct: false }
+      ]
+    },
+    {
+      id: 5,
+      text: "Una herida de entrada de bala suele presentar:",
+      category: "Balística",
+      answers: [
+        { text: "Bordes limpios y hacia dentro", correct: true },
+        { text: "Bordes dentados y muy abiertos", correct: false },
+        { text: "Ausencia total de sangrado", correct: false }
+      ]
+    },
+    {
+      id: 6,
+      text: "¿Qué es la tanatología?",
+      category: "Medicina legal",
+      answers: [
+        { text: "Estudio de la muerte", correct: true },
+        { text: "Estudio del ADN", correct: false },
+        { text: "Estudio de los tóxicos", correct: false }
+      ]
+    },
+    {
+      id: 7,
+      text: "¿Qué órgano se analiza con frecuencia para detectar tóxicos?",
+      category: "Toxicología",
+      answers: [
+        { text: "Hígado", correct: true },
+        { text: "Páncreas", correct: false },
+        { text: "Bazo", correct: false }
+      ]
+    },
+    {
+      id: 8,
+      text: "¿Qué aporta un análisis de ADN en un caso?",
+      category: "ADN",
+      answers: [
+        { text: "Identidad biológica", correct: true },
+        { text: "Edad exacta", correct: false },
+        { text: "Causa de la muerte", correct: false }
+      ]
+    },
+    {
+      id: 9,
+      text: "El estudio de manchas de sangre en paredes y suelos se llama:",
+      category: "Criminalística",
+      answers: [
+        { text: "Análisis de patrón de manchas", correct: true },
+        { text: "Perfil toxicológico", correct: false },
+        { text: "Perfil psicológico", correct: false }
+      ]
+    },
+    {
+      id: 10,
+      text: "¿Qué indica la presencia de lesiones de defensa en las manos de la víctima?",
+      category: "Escena del crimen",
+      answers: [
+        { text: "Que intentó protegerse del ataque", correct: true },
+        { text: "Que murió en su sueño", correct: false },
+        { text: "Que se trató de un accidente", correct: false }
+      ]
+    },
+    // 11–75 (resumen pero completamente jugables)
+    {
+      id: 11,
+      text: "¿Qué es una autopsia clínica?",
+      category: "Medicina legal",
+      answers: [
+        { text: "Examen del cadáver con fines diagnósticos", correct: true },
+        { text: "Examen solo policial del lugar", correct: false },
+        { text: "Examen psicológico del sospechoso", correct: false }
+      ]
+    },
+    {
+      id: 12,
+      text: "La temperatura corporal tras la muerte:",
+      category: "Tanatología",
+      answers: [
+        { text: "Desciende progresivamente hasta igualarse al ambiente", correct: true },
+        { text: "Aumenta durante horas", correct: false },
+        { text: "Permanece constante siempre", correct: false }
+      ]
+    },
+    {
+      id: 13,
+      text: "¿Qué técnica se usa para comparar huellas dactilares?",
+      category: "Huellas",
+      answers: [
+        { text: "Sistemas AFIS", correct: true },
+        { text: "Electrocardiograma", correct: false },
+        { text: "Tac craneal", correct: false }
+      ]
+    },
+    {
+      id: 14,
+      text: "El anillo de enjugamiento pertenece a:",
+      category: "Balística",
+      answers: [
+        { text: "Heridas de entrada por arma de fuego", correct: true },
+        { text: "Heridas cortantes", correct: false },
+        { text: "Luxaciones articulares", correct: false }
+      ]
+    },
+    {
+      id: 15,
+      text: "¿Qué se detecta en un perfil toxicológico?",
+      category: "Toxicología",
+      answers: [
+        { text: "Sustancias químicas y drogas presentes", correct: true },
+        { text: "Historia familiar de la víctima", correct: false },
+        { text: "Nivel de estudios", correct: false }
+      ]
+    },
+    {
+      id: 16,
+      text: "Un hematoma subdural suele asociarse a:",
+      category: "Traumatología forense",
+      answers: [
+        { text: "Traumatismos craneales", correct: true },
+        { text: "Envenenamientos digestivos", correct: false },
+        { text: "Asfixias por bolsa", correct: false }
+      ]
+    },
+    {
+      id: 17,
+      text: "¿Qué es una muerte violenta?",
+      category: "Medicina legal",
+      answers: [
+        { text: "Causada por factores externos", correct: true },
+        { text: "Causada solo por enfermedades", correct: false },
+        { text: "Causada por envejecimiento natural", correct: false }
+      ]
+    },
+    {
+      id: 18,
+      text: "La asfixia por estrangulación suele mostrar:",
+      category: "Asfixiología",
+      answers: [
+        { text: "Surco en cuello y petequias", correct: true },
+        { text: "Fractura de fémur", correct: false },
+        { text: "Quemaduras generalizadas", correct: false }
+      ]
+    },
+    {
+      id: 19,
+      text: "¿Qué indica una fractura en antebrazos tipo 'parada de golpe'?",
+      category: "Defensa",
+      answers: [
+        { text: "Intento de protegerse del agresor", correct: true },
+        { text: "Caída accidental", correct: false },
+        { text: "Manipulación post mortem", correct: false }
+      ]
+    },
+    {
+      id: 20,
+      text: "¿Qué significa 'post mortem'?",
+      category: "Medicina legal",
+      answers: [
+        { text: "Después de la muerte", correct: true },
+        { text: "Antes de la muerte", correct: false },
+        { text: "Durante la cirugía", correct: false }
+      ]
+    },
+    {
+      id: 21,
+      text: "Las contusiones en diferentes fases de coloración sugieren:",
+      category: "Violencia",
+      answers: [
+        { text: "Agresiones repetidas en el tiempo", correct: true },
+        { text: "Un único impacto reciente", correct: false },
+        { text: "Solo enfermedad hematológica", correct: false }
+      ]
+    },
+    {
+      id: 22,
+      text: "¿Qué es una cadena de custodia?",
+      category: "Criminalística",
+      answers: [
+        { text: "Registro controlado de la evidencia", correct: true },
+        { text: "Lista de testigos del caso", correct: false },
+        { text: "Calendario de turnos policiales", correct: false }
+      ]
+    },
+    {
+      id: 23,
+      text: "¿Qué muestra se usa con frecuencia para alcohol en conducción?",
+      category: "Toxicología",
+      answers: [
+        { text: "Sangre y aire espirado", correct: true },
+        { text: "Lágrimas", correct: false },
+        { text: "Sudor plantar", correct: false }
+      ]
+    },
+    {
+      id: 24,
+      text: "La diatomeas en órganos se asocian a:",
+      category: "Ahogamiento",
+      answers: [
+        { text: "Muerte por sumersión en agua", correct: true },
+        { text: "Golpe de calor", correct: false },
+        { text: "Envenenamiento por cianuro", correct: false }
+      ]
+    },
+    {
+      id: 25,
+      text: "¿Qué es el ADN mitocondrial útil para?",
+      category: "ADN",
+      answers: [
+        { text: "Identificar línea materna", correct: true },
+        { text: "Determinar peso de la víctima", correct: false },
+        { text: "Saber grupo social", correct: false }
+      ]
+    },
+    {
+      id: 26,
+      text: "¿Qué es un disparo a bocajarro?",
+      category: "Balística",
+      answers: [
+        { text: "Disparo muy cercano a la piel", correct: true },
+        { text: "Disparo a más de 10 m", correct: false },
+        { text: "Disparo rebote en pared", correct: false }
+      ]
+    },
+    {
+      id: 27,
+      text: "El olor a almendras amargas puede sugerir:",
+      category: "Toxicología",
+      answers: [
+        { text: "Intoxicación por cianuro", correct: true },
+        { text: "Fractura de cráneo", correct: false },
+        { text: "Infarto agudo de miocardio", correct: false }
+      ]
+    },
+    {
+      id: 28,
+      text: "¿Qué se valora en una huella dactilar?",
+      category: "Huellas",
+      answers: [
+        { text: "Puntos característicos y crestas", correct: true },
+        { text: "Color de la piel", correct: false },
+        { text: "Temperatura corporal", correct: false }
+      ]
+    },
+    {
+      id: 29,
+      text: "Las fibras sintéticas se diferencian de las naturales por:",
+      category: "Fibras / Textil",
+      answers: [
+        { text: "Su reacción al calor y a disolventes", correct: true },
+        { text: "Su olor al perfume", correct: false },
+        { text: "Su precio en el mercado", correct: false }
+      ]
+    },
+    {
+      id: 30,
+      text: "En un incendio, la presencia de hollín en vías respiratorias indica:",
+      category: "Patología forense",
+      answers: [
+        { text: "Que la víctima estaba viva durante el fuego", correct: true },
+        { text: "Que murió antes del incendio", correct: false },
+        { text: "Que sufría bronquitis crónica", correct: false }
+      ]
+    },
+    {
+      id: 31,
+      text: "¿Qué es una lesión incisa?",
+      category: "Lesiones",
+      answers: [
+        { text: "Herida producida por objeto cortante", correct: true },
+        { text: "Herida por objeto romo", correct: false },
+        { text: "Herida por proyectil", correct: false }
+      ]
+    },
+    {
+      id: 32,
+      text: "¿Qué indica una fractura hioidea en ahorcamiento?",
+      category: "Asfixiología",
+      answers: [
+        { text: "Posible mayor violencia o edad avanzada", correct: true },
+        { text: "Muerte por sobredosis", correct: false },
+        { text: "Muerte por arma blanca", correct: false }
+      ]
+    },
+    {
+      id: 33,
+      text: "Las moscas y larvas en un cadáver ayudan a:",
+      category: "Entomología forense",
+      answers: [
+        { text: "Estimar el intervalo post mortem", correct: true },
+        { text: "Determinar grupo sanguíneo", correct: false },
+        { text: "Decidir horario del juicio", correct: false }
+      ]
+    },
+    {
+      id: 34,
+      text: "¿Qué es una lesión contusa?",
+      category: "Lesiones",
+      answers: [
+        { text: "Golpe por objeto romo", correct: true },
+        { text: "Corte limpio por cuchillo", correct: false },
+        { text: "Herida eléctrica", correct: false }
+      ]
+    },
+    {
+      id: 35,
+      text: "¿Qué se analiza en una muestra de cabello?",
+      category: "Toxicología",
+      answers: [
+        { text: "Consumo crónico de tóxicos", correct: true },
+        { text: "Presión arterial", correct: false },
+        { text: "Capacidad pulmonar", correct: false }
+      ]
+    },
+    {
+      id: 36,
+      text: "El 'anillo de Fisch' se asocia a:",
+      category: "Balística",
+      answers: [
+        { text: "Orificio de entrada por arma de fuego", correct: true },
+        { text: "Golpe contuso", correct: false },
+        { text: "Envenenamiento hepático", correct: false }
+      ]
+    },
+    {
+      id: 37,
+      text: "¿Qué tipo de muerte es un suicidio?",
+      category: "Medicina legal",
+      answers: [
+        { text: "Muerte violenta", correct: true },
+        { text: "Muerte natural", correct: false },
+        { text: "Muerte accidental", correct: false }
+      ]
+    },
+    {
+      id: 38,
+      text: "La ingestión masiva de paracetamol daña principalmente:",
+      category: "Toxicología",
+      answers: [
+        { text: "El hígado", correct: true },
+        { text: "El corazón", correct: false },
+        { text: "La piel", correct: false }
+      ]
+    },
+    {
+      id: 39,
+      text: "¿Qué es la cadena ligera en ADN?",
+      category: "ADN",
+      answers: [
+        { text: "Concepto técnico de estructura de ADN", correct: true },
+        { text: "Cadena de custodia", correct: false },
+        { text: "Cadena de llamadas", correct: false }
+      ]
+    },
+    {
+      id: 40,
+      text: "Una escena con muebles volcados y cristales rotos sugiere:",
+      category: "Escena del crimen",
+      answers: [
+        { text: "Posible lucha previa", correct: true },
+        { text: "Mudanza reciente", correct: false },
+        { text: "Errores de limpieza", correct: false }
+      ]
+    },
+    {
+      id: 41,
+      text: "¿Qué es el 'intervalo post mortem'?",
+      category: "Tanatología",
+      answers: [
+        { text: "Tiempo transcurrido desde la muerte", correct: true },
+        { text: "Tiempo de ingreso hospitalario", correct: false },
+        { text: "Duración del juicio", correct: false }
+      ]
+    },
+    {
+      id: 42,
+      text: "En las caídas desde altura, son típicas:",
+      category: "Traumatología forense",
+      answers: [
+        { text: "Múltiples fracturas en varios niveles", correct: true },
+        { text: "Solo erosiones en manos", correct: false },
+        { text: "Ninguna lesión ósea", correct: false }
+      ]
+    },
+    {
+      id: 43,
+      text: "¿Qué se conserva mejor para análisis: sangre o hueso en cadáver antiguo?",
+      category: "Antropología",
+      answers: [
+        { text: "El hueso", correct: true },
+        { text: "La sangre", correct: false },
+        { text: "La saliva", correct: false }
+      ]
+    },
+    {
+      id: 44,
+      text: "Las marcas de atadura en muñecas sugieren:",
+      category: "Criminalística",
+      answers: [
+        { text: "Sujeción o inmovilización previa", correct: true },
+        { text: "Accidente doméstico simple", correct: false },
+        { text: "Solo juego infantil", correct: false }
+      ]
+    },
+    {
+      id: 45,
+      text: "En violencia de género, las lesiones frecuentes son:",
+      category: "Violencia de género",
+      answers: [
+        { text: "Contusiones en cara, tronco y extremidades", correct: true },
+        { text: "Solo fracturas craneales", correct: false },
+        { text: "Exclusivamente cortes profundos", correct: false }
+      ]
+    },
+    {
+      id: 46,
+      text: "¿Qué indica un tórax aplastado en accidente de tráfico?",
+      category: "Tráfico",
+      answers: [
+        { text: "Impacto de alta energía", correct: true },
+        { text: "Asfixia por almohada", correct: false },
+        { text: "Quemadura térmica", correct: false }
+      ]
+    },
+    {
+      id: 47,
+      text: "El uso de luz ultravioleta en escena sirve para:",
+      category: "Criminalística",
+      answers: [
+        { text: "Visualizar manchas biológicas ocultas", correct: true },
+        { text: "Ver a través de paredes", correct: false },
+        { text: "Medir temperatura ambiente", correct: false }
+      ]
+    },
+    {
+      id: 48,
+      text: "¿Qué es la prueba de alcoholemia?",
+      category: "Toxicología",
+      answers: [
+        { text: "Determinación de alcohol en sangre o aire espirado", correct: true },
+        { text: "Estudio del hígado al microscopio", correct: false },
+        { text: "Medición de azúcar en sangre", correct: false }
+      ]
+    },
+    {
+      id: 49,
+      text: "Una puñalada por la espalda suele sugerir:",
+      category: "Criminalística",
+      answers: [
+        { text: "Agresión traicionera sin defensa", correct: true },
+        { text: "Pelea frontal", correct: false },
+        { text: "Autolesión", correct: false }
+      ]
+    },
+    {
+      id: 50,
+      text: "¿Qué es un 'overdose' en toxicología?",
+      category: "Toxicología",
+      answers: [
+        { text: "Dosis excesiva de una sustancia", correct: true },
+        { text: "Dosis terapéutica normal", correct: false },
+        { text: "Ausencia total de droga", correct: false }
+      ]
+    },
+    {
+      id: 51,
+      text: "El análisis de pólvora en manos se usa para:",
+      category: "Balística",
+      answers: [
+        { text: "Saber si alguien disparó un arma", correct: true },
+        { text: "Detectar alcohol", correct: false },
+        { text: "Comprobar huellas dactilares", correct: false }
+      ]
+    },
+    {
+      id: 52,
+      text: "¿Qué son las petequias conjuntivales?",
+      category: "Asfixiología",
+      answers: [
+        { text: "Pequeñas hemorragias puntiformes en ojos", correct: true },
+        { text: "Fracturas óseas", correct: false },
+        { text: "Úlceras gástricas", correct: false }
+      ]
+    },
+    {
+      id: 53,
+      text: "La soga que deja un surco oblicuo en ahorcamiento indica:",
+      category: "Asfixiología",
+      answers: [
+        { text: "Suspensión del cuerpo", correct: true },
+        { text: "Golpe con palo", correct: false },
+        { text: "Envenenamiento", correct: false }
+      ]
+    },
+    {
+      id: 54,
+      text: "¿Qué disciplina estudia los restos óseos humanos?",
+      category: "Antropología forense",
+      answers: [
+        { text: "Antropología forense", correct: true },
+        { text: "Cardiología clínica", correct: false },
+        { text: "Psicología social", correct: false }
+      ]
+    },
+    {
+      id: 55,
+      text: "Una herida en \"cola de rata\" es típica de:",
+      category: "Lesiones",
+      answers: [
+        { text: "Autolesiones superficiales", correct: true },
+        { text: "Impacto de bala", correct: false },
+        { text: "Mordedura animal", correct: false }
+      ]
+    },
+    {
+      id: 56,
+      text: "¿Qué es un hematoma?",
+      category: "Lesiones",
+      answers: [
+        { text: "Acúmulo de sangre en tejidos", correct: true },
+        { text: "Acúmulo de aire en pulmones", correct: false },
+        { text: "Acúmulo de líquido en articulación", correct: false }
+      ]
+    },
+    {
+      id: 57,
+      text: "El análisis de fibras en ropa sirve para:",
+      category: "Fibras / Textil",
+      answers: [
+        { text: "Relacionar víctima y agresor", correct: true },
+        { text: "Medir presión arterial", correct: false },
+        { text: "Diagnosticar infecciones", correct: false }
+      ]
+    },
+    {
+      id: 58,
+      text: "¿Qué se busca en una radiografía forense?",
+      category: "Medicina legal",
+      answers: [
+        { text: "Fracturas, cuerpos extraños y proyectiles", correct: true },
+        { text: "Edad mental del sospechoso", correct: false },
+        { text: "Estado civil de la víctima", correct: false }
+      ]
+    },
+    {
+      id: 59,
+      text: "El color cereza en la piel de un cadáver puede indicar:",
+      category: "Toxicología",
+      answers: [
+        { text: "Intoxicación por monóxido de carbono", correct: true },
+        { text: "Infarto agudo", correct: false },
+        { text: "Muerte por frío", correct: false }
+      ]
+    },
+    {
+      id: 60,
+      text: "¿Qué se entiende por evidencia traza?",
+      category: "Criminalística",
+      answers: [
+        { text: "Partículas muy pequeñas como fibras o polvos", correct: true },
+        { text: "Declaraciones de testigos", correct: false },
+        { text: "Historial clínico", correct: false }
+      ]
+    },
+    {
+      id: 61,
+      text: "¿Qué es la 'lesión vital'?",
+      category: "Medicina legal",
+      answers: [
+        { text: "Lesión producida en vida", correct: true },
+        { text: "Lesión tras la autopsia", correct: false },
+        { text: "Lesión en cadáver congelado", correct: false }
+      ]
+    },
+    {
+      id: 62,
+      text: "La presencia de espuma en boca y nariz sugiere:",
+      category: "Patología forense",
+      answers: [
+        { text: "Edema agudo de pulmón", correct: true },
+        { text: "Fractura de tibia", correct: false },
+        { text: "Luxación de hombro", correct: false }
+      ]
+    },
+    {
+      id: 63,
+      text: "¿Qué es una necropsia judicial?",
+      category: "Medicina legal",
+      answers: [
+        { text: "Autopsia ordenada por autoridad legal", correct: true },
+        { text: "Autopsia voluntaria familiar", correct: false },
+        { text: "Revisión de historia clínica", correct: false }
+      ]
+    },
+    {
+      id: 64,
+      text: "Las marcas de ligadura en tobillos pueden indicar:",
+      category: "Criminalística",
+      answers: [
+        { text: "Secuestro o retención forzosa", correct: true },
+        { text: "Viaje en avión", correct: false },
+        { text: "Caída accidental", correct: false }
+      ]
+    },
+    {
+      id: 65,
+      text: "¿Qué se analiza en una mancha marrón sospechosa en ropa?",
+      category: "Biología forense",
+      answers: [
+        { text: "Si es sangre y su origen", correct: true },
+        { text: "Si es pintura al óleo", correct: false },
+        { text: "Si es barro de jardín", correct: false }
+      ]
+    },
+    {
+      id: 66,
+      text: "El 'efecto túnel' en testigos se refiere a:",
+      category: "Psicología forense",
+      answers: [
+        { text: "Fijarse solo en un detalle (arma)", correct: true },
+        { text: "Ver todo con claridad total", correct: false },
+        { text: "No recordar nada", correct: false }
+      ]
+    },
+    {
+      id: 67,
+      text: "¿Qué es el diagnóstico diferencial de la causa de muerte?",
+      category: "Medicina legal",
+      answers: [
+        { text: "Comparar posibles causas y descartar", correct: true },
+        { text: "Elegir causa al azar", correct: false },
+        { text: "Preguntar a los familiares", correct: false }
+      ]
+    },
+    {
+      id: 68,
+      text: "Las lesiones por defensa activa suelen localizarse en:",
+      category: "Lesiones",
+      answers: [
+        { text: "Manos y antebrazos", correct: true },
+        { text: "Rodillas solamente", correct: false },
+        { text: "Cuello exclusivamente", correct: false }
+      ]
+    },
+    {
+      id: 69,
+      text: "¿Qué significa 'móvil del delito'?",
+      category: "Criminalística",
+      answers: [
+        { text: "Motivo o razón que impulsa el crimen", correct: true },
+        { text: "Arma utilizada en el crimen", correct: false },
+        { text: "Lugar del crimen", correct: false }
+      ]
+    },
+    {
+      id: 70,
+      text: "La ausencia de lesiones externas en una muerte súbita puede deberse a:",
+      category: "Patología forense",
+      answers: [
+        { text: "Causa interna como arritmia", correct: true },
+        { text: "Siempre envenenamiento", correct: false },
+        { text: "Golpe externo oculto", correct: false }
+      ]
+    },
+    {
+      id: 71,
+      text: "Las fracturas por arma de fuego en cráneo muestran a menudo:",
+      category: "Balística",
+      answers: [
+        { text: "Líneas radiales desde el impacto", correct: true },
+        { text: "Ausencia total de fractura", correct: false },
+        { text: "Solo fisuras en costillas", correct: false }
+      ]
+    },
+    {
+      id: 72,
+      text: "¿Qué es la escena primaria de un crimen?",
+      category: "Escena del crimen",
+      answers: [
+        { text: "Lugar donde realmente se cometió", correct: true },
+        { text: "Lugar donde se halló el cadáver", correct: false },
+        { text: "Lugar del juicio oral", correct: false }
+      ]
+    },
+    {
+      id: 73,
+      text: "El análisis de tierra en zapatos puede servir para:",
+      category: "Criminalística",
+      answers: [
+        { text: "Relacionar al sospechoso con un lugar", correct: true },
+        { text: "Determinar edad exacta", correct: false },
+        { text: "Estimar nivel cultural", correct: false }
+      ]
+    },
+    {
+      id: 74,
+      text: "¿Qué es una lesión por arma blanca?",
+      category: "Lesiones",
+      answers: [
+        { text: "Lesión producida por objeto punzante o cortante", correct: true },
+        { text: "Lesión por objeto romo", correct: false },
+        { text: "Lesión por calor", correct: false }
+      ]
+    },
+    {
+      id: 75,
+      text: "En medicina legal, 'incompatibilidad con la vida' se refiere a:",
+      category: "Medicina legal",
+      answers: [
+        { text: "Lesiones tan graves que impiden la supervivencia", correct: true },
+        { text: "Lesiones leves sin importancia", correct: false },
+        { text: "Lesiones solo psicológicas", correct: false }
+      ]
+    }
+  ];
+
+  // 15 CASOS COMPLETOS
+  const CASES = [
+    {
+      id: 1,
+      title: "Silencio en el canal",
+      victim: "Laura Méndez, periodista",
+      location: "Estudio de TV",
+      causeOfDeath: "Golpe craneal",
+      summary: "Una periodista aparece muerta en el plató poco antes de destapar un escándalo de corrupción.",
+      suspects: [
+        { name: "Jefe de redacción", profession: "Periodista", guilty: false },
+        { name: "Técnico de sonido", profession: "Técnico", guilty: false },
+        { name: "Exnovio policía", profession: "Policía", guilty: false },
+        { name: "Directora del canal", profession: "Directora", guilty: true }
+      ],
+      clues: [
+        "La víctima preparaba un reportaje sobre corrupción interna.",
+        "No hay signos de robo; los efectos personales están intactos.",
+        "El golpe proviene de un foco pesado del plató.",
+        "Correos amenazantes desde una cuenta vinculada a la dirección.",
+        "Registro de entrada tardía de la directora al estudio.",
+        "Las cámaras muestran a la directora manipulando la escena.",
+        "Huella parcial de la directora en la base del foco.",
+        "Un borrador del reportaje involucra directamente a la dirección."
+      ]
+    },
+    {
+      id: 2,
+      title: "Copa mortal",
+      victim: "Julio Ramos, empresario",
+      location: "Hotel de lujo",
+      causeOfDeath: "Envenenamiento",
+      summary: "Un empresario muere en una cena de negocios. La copa de vino parece ser la clave.",
+      suspects: [
+        { name: "Socio de la empresa", profession: "Empresario", guilty: true },
+        { name: "Camarera", profession: "Camarera", guilty: false },
+        { name: "Rival de negocios", profession: "Competidor", guilty: false },
+        { name: "Esposa", profession: "Ama de casa", guilty: false }
+      ],
+      clues: [
+        "El tóxico hallado es de acción rápida y soluble en vino.",
+        "Solo la copa de la víctima tiene restos del veneno.",
+        "La camarera sirvió las copas siguiendo una bandeja preparada.",
+        "El socio tenía acceso previo a la mesa y a la bodega.",
+        "Mensajes del socio quejándose del control del fallecido.",
+        "El socio revisó en internet sustancias similares días antes.",
+        "Documentación económica lo señala como beneficiario principal.",
+        "Las cámaras lo muestran acercándose a la mesa estando vacía."
+      ]
+    },
+    {
+      id: 3,
+      title: "Explosión académica",
+      victim: "Sara Solís, estudiante de química",
+      location: "Laboratorio universitario",
+      causeOfDeath: "Explosión química",
+      summary: "Una estudiante brillante muere tras una explosión en el laboratorio que parece un 'accidente'.",
+      suspects: [
+        { name: "Profesor titular", profession: "Docente", guilty: true },
+        { name: "Alumno rival", profession: "Estudiante", guilty: false },
+        { name: "Vigilante nocturno", profession: "Seguridad", guilty: false },
+        { name: "Hermana", profession: "Diseñadora", guilty: false }
+      ],
+      clues: [
+        "La mezcla explosiva no coincide con su protocolo habitual.",
+        "En su portátil hay un informe acusando al profesor de plagio.",
+        "El profesor tenía copia de las llaves del laboratorio.",
+        "La puerta no muestra signos de forzamiento.",
+        "La cámara del pasillo capta al profesor entrando de madrugada.",
+        "En la bata del profesor hay restos de la misma sustancia.",
+        "El vigilante solo anotó su entrada en el libro, no la de Sara.",
+        "El profesor iba a presentar un artículo con sus resultados como propios."
+      ]
+    },
+    {
+      id: 4,
+      title: "El pasajero 23",
+      victim: "Diego Cortés, comercial",
+      location: "Autobús interurbano",
+      causeOfDeath: "Asfixia",
+      summary: "Un pasajero aparece muerto en plena ruta. Nadie dice haber visto nada, pero el bus tenía cámaras.",
+      suspects: [
+        { name: "Chofer", profession: "Conductor", guilty: false },
+        { name: "Mujer mayor", profession: "Jubilada", guilty: false },
+        { name: "Estudiante", profession: "Universitario", guilty: true },
+        { name: "Amigo de trabajo", profession: "Comercial", guilty: false }
+      ],
+      clues: [
+        "La víctima presenta marcas de presión en el cuello.",
+        "No hay signos de robo, la cartera sigue con dinero.",
+        "El estudiante cambió varias veces de asiento durante el viaje.",
+        "En el móvil de la víctima hay mensajes de chantaje pendientes.",
+        "La mujer mayor declara que oyó una discusión en voz baja detrás.",
+        "Las fibras de la bufanda de la víctima aparecen en la chaqueta del estudiante.",
+        "En el historial de la víctima hay un atropello antiguo sin condenado.",
+        "El padre del estudiante fue la víctima del atropello sin justicia."
+      ]
+    },
+    {
+      id: 5,
+      title: "La galería vacía",
+      victim: "Marta Gálvez, galerista",
+      location: "Galería de arte",
+      causeOfDeath: "Apuñalamiento",
+      summary: "La dueña de una galería aparece muerta tras una inauguración muy concurrida.",
+      suspects: [
+        { name: "Artista principal", profession: "Pintor", guilty: false },
+        { name: "Crítico de arte", profession: "Crítico", guilty: true },
+        { name: "Coleccionista", profession: "Empresario", guilty: false },
+        { name: "Ayudante de sala", profession: "Asistente", guilty: false }
+      ],
+      clues: [
+        "La víctima iba a cancelar un contrato con el crítico.",
+        "El arma es un cuchillo de la propia cocina de la galería.",
+        "No hay signos de robo de obras.",
+        "Testigos oyeron una fuerte discusión en el despacho.",
+        "El crítico tenía deudas y necesitaba la comisión.",
+        "Su chaqueta tiene una gota de sangre coincidente con la víctima.",
+        "Mensajes de voz muestran amenazas veladas del crítico.",
+        "La ayudante se encontraba recolocando cuadros en la sala principal."
+      ]
+    },
+    {
+      id: 6,
+      title: "El silencio del hospital",
+      victim: "Adela Román, paciente oncológica",
+      location: "Habitación de hospital",
+      causeOfDeath: "Sobredosis medicamentosa",
+      summary: "Una paciente estable muere de forma repentina. Los registros de medicación no cuadran.",
+      suspects: [
+        { name: "Enfermera de turno", profession: "Enfermera", guilty: true },
+        { name: "Médico responsable", profession: "Oncólogo", guilty: false },
+        { name: "Familiar cercano", profession: "Hija", guilty: false },
+        { name: "Auxiliar", profession: "TCAE", guilty: false }
+      ],
+      clues: [
+        "Los niveles del fármaco en sangre son superiores a la dosis pautada.",
+        "La hoja de medicación está corregida a bolígrafo.",
+        "La enfermera tenía acceso directo a la bomba de infusión.",
+        "La hija pidió sedación pero fue informada de que no era necesaria.",
+        "Cámaras del pasillo muestran a la enfermera entrando sola varias veces.",
+        "La enfermera había discutido con la paciente por quejas formales.",
+        "La jeringa encontrada en el cubo no está registrada en el control.",
+        "El médico estaba en quirófano durante el intervalo crítico."
+      ]
+    },
+    {
+      id: 7,
+      title: "Fiesta letal",
+      victim: "Leo Martín, DJ",
+      location: "Club nocturno",
+      causeOfDeath: "Traumatismo craneoencefálico + alcohol",
+      summary: "Un DJ muy popular muere tras una caída en cabina. ¿Accidente o agresión en la fiesta?",
+      suspects: [
+        { name: "Manager", profession: "Representante", guilty: false },
+        { name: "Dueño del local", profession: "Empresario", guilty: false },
+        { name: "DJ sustituto", profession: "Músico", guilty: true },
+        { name: "Camarero", profession: "Camarero", guilty: false }
+      ],
+      clues: [
+        "El nivel de alcohol es alto pero no letal por sí solo.",
+        "El golpe en la cabeza tiene patrón de impacto con objeto.",
+        "El DJ sustituto perdería el contrato si Leo continuaba.",
+        "Mensajes revelan rivalidad profesional entre ambos.",
+        "Un testigo vio una discusión en la cabina poco antes.",
+        "En la barra se encontraron restos de sangre del DJ.",
+        "La cámara cercana se apagó justo durante la pelea.",
+        "El sustituto fue visto limpiándose las manos en el baño."
+      ]
+    },
+    {
+      id: 8,
+      title: "Laboratorio oscuro",
+      victim: "Tomás Vidal, técnico",
+      location: "Laboratorio privado",
+      causeOfDeath: "Inhalación de gas tóxico",
+      summary: "Un técnico aparece muerto junto a un cilindro de gas abierto.",
+      suspects: [
+        { name: "Compañera de turno", profession: "Técnica", guilty: false },
+        { name: "Responsable de seguridad", profession: "Ingeniero", guilty: true },
+        { name: "Personal de limpieza", profession: "Limpiador", guilty: false },
+        { name: "Proveedor de reactivos", profession: "Comercial", guilty: false }
+      ],
+      clues: [
+        "El detector de gases estaba desactivado manualmente.",
+        "El responsable de seguridad tenía la clave del panel.",
+        "Tomás había enviado un correo denunciando fallos de seguridad.",
+        "La compañera estaba en otra sala certificando muestras.",
+        "La puerta estaba cerrada por dentro pero la ventana del pasillo no.",
+        "En el ordenador del responsable hay borradores para ocultar un informe.",
+        "El cilindro presenta huellas del responsable y de la víctima.",
+        "Factura de sanción reciente que recaería sobre el responsable."
+      ]
+    },
+    {
+      id: 9,
+      title: "Nota final",
+      victim: "Raúl Peña, escritor",
+      location: "Despacho editorial",
+      causeOfDeath: "Caída desde altura",
+      summary: "Un escritor cae desde la ventana de un séptimo piso la noche antes de firmar un contrato.",
+      suspects: [
+        { name: "Editor jefe", profession: "Editor", guilty: true },
+        { name: "Correctora", profession: "Correctora", guilty: false },
+        { name: "Autor rival", profession: "Escritor", guilty: false },
+        { name: "Recepcionista", profession: "Recepcionista", guilty: false }
+      ],
+      clues: [
+        "El borrador del contrato reducía sus beneficios a última hora.",
+        "El escritorio presenta signos de forcejeo.",
+        "Vecinos escuchan gritos de discusión antes de la caída.",
+        "El editor tenía problemas económicos.",
+        "La ventana estaba abierta de par en par sin huellas de la víctima en el marco.",
+        "En la camisa del editor hay fibras de la ropa de Raúl.",
+        "Las cámaras del ascensor muestran al editor subiendo solo hacia la oficina.",
+        "La correctora se había marchado una hora antes."
+      ]
+    },
+    {
+      id: 10,
+      title: "Habitación 404",
+      victim: "Claudia Núñez, turista",
+      location: "Hotel urbano",
+      causeOfDeath: "Estrangulación",
+      summary: "Una turista aparece muerta en su habitación sin señales de robo.",
+      suspects: [
+        { name: "Recepcionista", profession: "Recepcionista", guilty: true },
+        { name: "Guía turístico", profession: "Guía", guilty: false },
+        { name: "Compañera de habitación", profession: "Amiga", guilty: false },
+        { name: "Vecino de habitación", profession: "Huésped", guilty: false }
+      ],
+      clues: [
+        "La puerta no presenta signos de forzamiento.",
+        "El recepcionista tenía llave maestra.",
+        "La víctima había reclamado por cargos indebidos en su cuenta.",
+        "Hay marcas de lucha cerca de la cama.",
+        "La compañera estaba cenando con el grupo en el restaurante.",
+        "Las cámaras del pasillo muestran al recepcionista acercándose a la 404.",
+        "El extracto bancario muestra cargos irregulares del hotel.",
+        "Fibras del uniforme del recepcionista se hallan en la ropa de la víctima."
+      ]
+    },
+    {
+      id: 11,
+      title: "Parque nocturno",
+      victim: "Noa Ríos, monitora",
+      location: "Parque infantil",
+      causeOfDeath: "Apuñalamiento",
+      summary: "Una monitora aparece muerta en el parque después del cierre.",
+      suspects: [
+        { name: "Monitor compañero", profession: "Monitor", guilty: true },
+        { name: "Padre de alumno", profession: "Padre", guilty: false },
+        { name: "Vigilante del parque", profession: "Seguridad", guilty: false },
+        { name: "Adolescente conflictivo", profession: "Estudiante", guilty: false }
+      ],
+      clues: [
+        "Noa había denunciado irregularidades del compañero ante la dirección.",
+        "El arma es una navaja plegable sin huellas claras.",
+        "El compañero no tiene coartada sólida; dice que 'ya se había ido'.",
+        "El vigilante vio a los dos discutiendo días antes.",
+        "Manchas de sangre cerca de la caseta donde guardan material.",
+        "En el móvil del compañero hay mensajes insultantes hacia Noa.",
+        "Cámaras cercanas captan a dos personas entrando en el parque tras el cierre.",
+        "La ropa del compañero tiene una mancha de sangre oculta en el puño."
+      ]
+    },
+    {
+      id: 12,
+      title: "Biblioteca roja",
+      victim: "Álvaro L. estudiante",
+      location: "Biblioteca universitaria",
+      causeOfDeath: "Traumatismo craneal",
+      summary: "Un estudiante aparece muerto entre estanterías tras una noche de estudio.",
+      suspects: [
+        { name: "Alumno repetidor", profession: "Estudiante", guilty: true },
+        { name: "Bibliotecaria", profession: "Bibliotecaria", guilty: false },
+        { name: "Amigo de clase", profession: "Estudiante", guilty: false },
+        { name: "Bedel", profession: "Conserje", guilty: false }
+      ],
+      clues: [
+        "La víctima sacó un libro clave sobre un examen complicado.",
+        "El repetidor estaba a punto de ser expulsado por malas notas.",
+        "El objeto usado es un extintor cercano.",
+        "El extintor tiene huellas del repetidor.",
+        "La bibliotecaria cerró el turno antes del suceso.",
+        "Un correo muestra amenazas veladas del repetidor.",
+        "El amigo declara que discutían a menudo por trabajos copiados.",
+        "Las cámaras ven al repetidor entrar en la zona restringida con Álvaro."
+      ]
+    },
+    {
+      id: 13,
+      title: "Receta mortal",
+      victim: "Óscar Molina, paciente",
+      location: "Farmacia de guardia",
+      causeOfDeath: "Envenenamiento medicamentoso",
+      summary: "Un paciente muere tras consumir un medicamento supuestamente de rutina.",
+      suspects: [
+        { name: "Farmacéutico", profession: "Farmacéutico", guilty: true },
+        { name: "Médico prescriptor", profession: "Médico", guilty: false },
+        { name: "Familiar", profession: "Hermano", guilty: false },
+        { name: "Ayudante", profession: "Auxiliar", guilty: false }
+      ],
+      clues: [
+        "La dosis entregada en la farmacia es mucho mayor a la prescrita.",
+        "El farmacéutico discutió con la víctima por una queja anterior.",
+        "En el almacén hay botes mal etiquetados.",
+        "El hermano acompañó a Óscar pero no tocó la medicación.",
+        "La caja devuelta a la policía tiene pegado un código cambiado.",
+        "Cámaras muestran al farmacéutico manipulando cajas fuera de horario.",
+        "El médico confirma que la receta original era correcta.",
+        "El auxiliar estaba atendiendo otra cola de clientes."
+      ]
+    },
+    {
+      id: 14,
+      title: "Escape truncado",
+      victim: "Rafa Gil, mecánico",
+      location: "Taller",
+      causeOfDeath: "Aplastamiento bajo vehículo",
+      summary: "Un mecánico muere aplastado cuando el coche que revisaba cae del elevador.",
+      suspects: [
+        { name: "Socio del taller", profession: "Mecánico", guilty: true },
+        { name: "Cliente", profession: "Conductor", guilty: false },
+        { name: "Aprendiz", profession: "Ayudante", guilty: false },
+        { name: "Proveedor", profession: "Comercial", guilty: false }
+      ],
+      clues: [
+        "El seguro de vida de Rafa beneficia al socio.",
+        "Los pernos del elevador estaban aflojados deliberadamente.",
+        "El socio tenía deudas y el taller no iba bien.",
+        "El aprendiz estaba en la zona de recambios.",
+        "El cliente no estaba presente en el momento del accidente.",
+        "Cámaras muestran al socio manipulando la estructura horas antes.",
+        "Informes previos de mantenimiento indicaban que el elevador estaba correcto.",
+        "Mensajes entre socios hablan de 'solución drástica'."
+      ]
+    },
+    {
+      id: 15,
+      title: "El juicio final",
+      victim: "Juez retirado, Antonio Rivas",
+      location: "Domicilio",
+      causeOfDeath: "Sobredosis de insulina",
+      summary: "Un juez retirado muere con un cuadro compatible con hipoglucemia grave.",
+      suspects: [
+        { name: "Abogado resentido", profession: "Abogado", guilty: true },
+        { name: "Cuidadora", profession: "Gerocultora", guilty: false },
+        { name: "Vecino", profession: "Comerciante", guilty: false },
+        { name: "Sobrino", profession: "Estudiante", guilty: false }
+      ],
+      clues: [
+        "No era diabético ni recibía insulina habitualmente.",
+        "En la nevera aparece un vial de insulina sin justificar.",
+        "El abogado perdió un caso importante ante este juez años atrás.",
+        "La cuidadora declara haber visto al abogado visitarlo recientemente.",
+        "Cámaras de la calle captan al abogado entrando el día anterior.",
+        "La jeringa hallada tiene huellas parciales compatibles con el abogado.",
+        "El sobrino solo lo visita los fines de semana y estaba fuera.",
+        "En el ordenador del abogado hay búsquedas sobre dosis letales de insulina."
+      ]
+    }
+  ];
+
+  // --- Estado del juego ---
+  const state = {
+    screen: "splash",
+    timePerQuestion: 30,
+    questionsToPlay: 30,
+    players: [],
+    currentPlayerIndex: 0,
+    currentQuestionIndex: 0,
+    shuffledQuestions: [],
+    currentQuestion: null,
+    timerId: null,
+    remainingTime: 0,
+    currentCase: null,
+    unlockedClues: 0,
+    log: [],
+    accusationTimerId: null,
+    accusationTime: 30
+  };
+
+  // --- Utilidades ---
+
+  function $(id) { return document.getElementById(id); }
+
+  function switchScreen(targetId) {
+    document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+    $(targetId).classList.add("active");
+    state.screen = targetId.replace("-screen", "");
+  }
+
+  function shuffle(array) {
+    const a = array.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function log(message) {
+    state.log.unshift(message);
+    const container = $("log");
+    container.innerHTML = state.log
+      .slice(0, 10)
+      .map((m) => `<div class="log-entry">${m}</div>`)
+      .join("");
+  }
+
+  function playSound(id) {
+    const el = $(id);
+    if (!el) return;
+    el.currentTime = 0;
+    el.play().catch(() => {});
+  }
+
+  function updatePlayerListConfig() {
+    const list = $("player-list");
+    list.innerHTML = "";
+    const numPlayers = parseInt($("select-players").value, 10);
+    state.players = [];
+    for (let i = 0; i < numPlayers; i++) {
+      const defaultName = `Jugador ${i + 1}`;
+      const avatar = AVATARS[i % AVATARS.length];
+
+      const item = document.createElement("div");
+      item.className = "player-item";
+
+      const tag = document.createElement("div");
+      tag.className = "player-tag";
+
+      const avatarPill = document.createElement("div");
+      avatarPill.className = "avatar-pill";
+      avatarPill.textContent = avatar.emoji;
+
+      const nameInput = document.createElement("input");
+      nameInput.type = "text";
+      nameInput.value = defaultName;
+      nameInput.placeholder = defaultName;
+      nameInput.style.minWidth = "0";
+      nameInput.addEventListener("input", () => {
+        state.players[i].name = nameInput.value || defaultName;
+        renderStatusBar();
+      });
+
+      tag.appendChild(avatarPill);
+      tag.appendChild(nameInput);
+
+      const selectAvatar = document.createElement("select");
+      AVATARS.forEach((av) => {
+        const opt = document.createElement("option");
+        opt.value = av.key;
+        opt.textContent = `${av.emoji} ${av.label}`;
+        if (av.key === avatar.key) opt.selected = true;
+        selectAvatar.appendChild(opt);
+      });
+      selectAvatar.addEventListener("change", () => {
+        const selected = AVATARS.find((a) => a.key === selectAvatar.value);
+        avatarPill.textContent = selected.emoji;
+        state.players[i].avatar = selected;
+        renderStatusBar();
+      });
+
+      item.appendChild(tag);
+      item.appendChild(selectAvatar);
+      list.appendChild(item);
+
+      state.players.push({
+        id: i,
+        name: defaultName,
+        avatar,
+        score: 0,
+        accusations: null
+      });
+    }
+  }
+
+  function chooseRandomCase() {
+    const index = Math.floor(Math.random() * CASES.length);
+    state.currentCase = CASES[index];
+    state.unlockedClues = 0;
+  }
+
+  function renderClues() {
+    const caseObj = state.currentCase;
+    if (!caseObj) return;
+    const ulGame = $("clues-list");
+    const ulAcc = $("acc-clues-list");
+    const clues = caseObj.clues;
+
+    function buildList(target, unlocked) {
+      target.innerHTML = "";
+      clues.forEach((clue, idx) => {
+        const li = document.createElement("li");
+        if (idx < unlocked) {
+          li.textContent = clue;
+          li.classList.add("unlocked");
+        } else {
+          li.textContent = "⚪ Pista bloqueada";
+        }
+        target.appendChild(li);
+      });
+    }
+
+    buildList(ulGame, state.unlockedClues);
+    buildList(ulAcc, state.unlockedClues);
+  }
+
+  function renderStatusBar() {
+    if (!state.players.length) return;
+    const current = state.players[state.currentPlayerIndex];
+    $("status-player").textContent =
+      `Turno de: ${current.name} (${current.avatar.emoji} ${current.avatar.label})`;
+
+    if (state.currentCase) {
+      $("status-case-title").textContent = state.currentCase.title;
+      $("case-summary").textContent = state.currentCase.summary;
+    }
+    $("status-progress").textContent =
+      `Pregunta ${state.currentQuestionIndex + 1} / ${state.questionsToPlay}`;
+  }
+
+  function startQuestionTimer() {
+    clearInterval(state.timerId);
+    state.remainingTime = state.timePerQuestion;
+    $("timer-value").textContent = state.remainingTime;
+
+    state.timerId = setInterval(() => {
+      state.remainingTime -= 1;
+      $("timer-value").textContent = state.remainingTime;
+      if (state.remainingTime <= 0) {
+        clearInterval(state.timerId);
+        handleAnswer(null);
+      }
+    }, 1000);
+  }
+
+  function nextQuestion() {
+    clearInterval(state.timerId);
+
+    if (state.currentQuestionIndex >= state.questionsToPlay ||
+        state.currentQuestionIndex >= state.shuffledQuestions.length) {
+      startAccusationPhase();
+      return;
+    }
+
+    const q = state.shuffledQuestions[state.currentQuestionIndex];
+    state.currentQuestion = q;
+
+    const card = $("question-card");
+    card.classList.remove("highlight-correct", "highlight-wrong");
+
+    $("question-text").textContent = q.text;
+    $("question-category").textContent = q.category;
+    $("question-footer").textContent = "Responde y desbloquea pistas del caso si aciertas.";
+
+    const answersContainer = $("answers-container");
+    answersContainer.innerHTML = "";
+
+    const shuffledAnswers = shuffle(q.answers);
+    shuffledAnswers.forEach((ans, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "btn answer-btn";
+      btn.dataset.correct = ans.correct ? "true" : "false";
+
+      const prefix = document.createElement("span");
+      prefix.className = "answer-prefix";
+      prefix.textContent = String.fromCharCode(65 + idx) + ")";
+
+      const text = document.createElement("span");
+      text.textContent = ans.text;
+
+      btn.appendChild(prefix);
+      btn.appendChild(text);
+
+      btn.addEventListener("click", () => handleAnswer(btn));
+      answersContainer.appendChild(btn);
+    });
+
+    renderStatusBar();
+    renderClues();
+    startQuestionTimer();
+  }
+
+  function handleAnswer(buttonEl) {
+    clearInterval(state.timerId);
+
+    const card = $("question-card");
+    let correct = false;
+
+    if (buttonEl && buttonEl.dataset.correct === "true") {
+      correct = true;
+    }
+
+    if (buttonEl) {
+      document
+        .querySelectorAll("#answers-container .btn")
+        .forEach((b) => (b.disabled = true));
+    }
+
+    const currentPlayer = state.players[state.currentPlayerIndex];
+
+    if (correct) {
+      card.classList.add("highlight-correct");
+      currentPlayer.score += 1;
+      if (state.unlockedClues < state.currentCase.clues.length) {
+        state.unlockedClues += 1;
+      }
+      renderClues();
+      playSound("sound-correct");
+      log(`<strong>${currentPlayer.name}</strong> acierta (+1 punto, pista desbloqueada).`);
+    } else {
+      card.classList.add("highlight-wrong");
+      playSound("sound-wrong");
+      log(`<strong>${currentPlayer.name}</strong> falla o se agota el tiempo.`);
+    }
+
+    state.currentPlayerIndex =
+      (state.currentPlayerIndex + 1) % state.players.length;
+    state.currentQuestionIndex += 1;
+    renderStatusBar();
+
+    setTimeout(() => {
+      nextQuestion();
+    }, 900);
+  }
+
+  function startAccusationPhase() {
+    switchScreen("accusation-screen");
+
+    clearInterval(state.timerId);
+    state.accusationTime = 30;
+    $("acc-timer-value").textContent = state.accusationTime;
+
+    const caseObj = state.currentCase;
+    $("acc-case-title").textContent = caseObj.title;
+    $("acc-case-summary").textContent = caseObj.summary;
+    renderClues();
+
+    const suspectsGrid = $("suspects-grid");
+    suspectsGrid.innerHTML = "";
+    caseObj.suspects.forEach((s) => {
+      const card = document.createElement("div");
+      card.className = "suspect-card";
+
+      const row = document.createElement("div");
+      row.className = "suspect-name-row";
+
+      const av = document.createElement("div");
+      av.className = "suspect-avatar";
+      av.textContent = s.profession === "Policía" ? "👮" : "🧍";
+
+      const name = document.createElement("div");
+      name.innerHTML = `<strong>${s.name}</strong>`;
+
+      row.appendChild(av);
+      row.appendChild(name);
+      card.appendChild(row);
+
+      const prof = document.createElement("div");
+      prof.className = "subtitle";
+      prof.textContent = s.profession;
+      card.appendChild(prof);
+
+      suspectsGrid.appendChild(card);
+    });
+
+    const selectionGrid = $("selection-grid");
+    selectionGrid.innerHTML = "";
+    state.players.forEach((player) => {
+      const row = document.createElement("div");
+      row.className = "selection-row";
+
+      const label = document.createElement("span");
+      label.textContent = player.name;
+
+      const select = document.createElement("select");
+      select.dataset.playerId = player.id;
+      caseObj.suspects.forEach((s, index) => {
+        const opt = document.createElement("option");
+        opt.value = index;
+        opt.textContent = s.name;
+        select.appendChild(opt);
+      });
+
+      row.appendChild(label);
+      row.appendChild(select);
+      selectionGrid.appendChild(row);
+    });
+
+    clearInterval(state.accusationTimerId);
+    state.accusationTimerId = setInterval(() => {
+      state.accusationTime -= 1;
+      $("acc-timer-value").textContent = state.accusationTime;
+      if (state.accusationTime <= 0) {
+        clearInterval(state.accusationTimerId);
+      }
+    }, 1000);
+  }
+
+  function resolveAccusations() {
+    clearInterval(state.accusationTimerId);
+    const caseObj = state.currentCase;
+    const guiltyIndex = caseObj.suspects.findIndex((s) => s.guilty);
+
+    const selectionRows = $("selection-grid").querySelectorAll("select");
+    selectionRows.forEach((sel) => {
+      const playerId = parseInt(sel.dataset.playerId, 10);
+      const chosenIndex = parseInt(sel.value, 10);
+      const player = state.players.find((p) => p.id === playerId);
+      player.accusations = chosenIndex;
+
+      if (chosenIndex === guiltyIndex) {
+        player.score += 3;
+        log(`<strong>${player.name}</strong> acierta en la acusación (+3 puntos).`);
+      } else {
+        player.score -= 1;
+        log(`<strong>${player.name}</strong> falla en la acusación (–1 punto).`);
+      }
+    });
+
+    renderResults();
+  }
+
+  function renderResults() {
+    switchScreen("results-screen");
+    const table = $("results-table");
+    table.innerHTML = "";
+
+    const headerRow = document.createElement("tr");
+    headerRow.innerHTML =
+      "<th>Jugador</th><th>Avatar</th><th>Puntos</th><th>Acusación</th>";
+    table.appendChild(headerRow);
+
+    const caseObj = state.currentCase;
+    const guiltyIndex = caseObj.suspects.findIndex((s) => s.guilty);
+    const sortedPlayers = state.players.slice().sort((a, b) => b.score - a.score);
+
+    sortedPlayers.forEach((player, index) => {
+      const row = document.createElement("tr");
+      const isWinner = index === 0;
+
+      const accused =
+        player.accusations != null
+          ? caseObj.suspects[player.accusations].name
+          : "Sin acusar";
+
+      row.innerHTML = `
+        <td>${player.name}</td>
+        <td>${player.avatar.emoji} ${player.avatar.label}</td>
+        <td class="${isWinner ? "score-winner" : ""}">${player.score}</td>
+        <td>${
+          player.accusations === guiltyIndex
+            ? `<span class="pill pill-success">Culpable correcto</span>`
+            : `<span class="pill pill-danger">Culpable incorrecto</span>`
+        }</td>
+      `;
+      table.appendChild(row);
+    });
+
+    const winner = sortedPlayers[0];
+    $("prize-text").textContent =
+      `El ganador es ${winner.name} (${winner.avatar.emoji} ${winner.avatar.label}). ` +
+      "Recibe una bolsa de golosinas, un peluche forense o una caja de lápices fluorescentes, a elegir.";
+  }
+
+  function startGameFromConfig() {
+    state.timePerQuestion = parseInt($("select-time").value, 10);
+    state.questionsToPlay = parseInt($("select-mode").value, 10);
+
+    state.currentPlayerIndex = 0;
+    state.currentQuestionIndex = 0;
+    state.log = [];
+    state.players.forEach((p) => {
+      p.score = 0;
+      p.accusations = null;
+    });
+
+    state.shuffledQuestions = shuffle(QUESTIONS);
+    chooseRandomCase();
+
+    const music = $("bg-music");
+    if ($("toggle-music").checked) {
+      music.volume = 0.5;
+      music.play().catch(() => {});
+    } else {
+      music.pause();
+    }
+
+    switchScreen("game-screen");
+    renderStatusBar();
+    renderClues();
+    nextQuestion();
+  }
+
+  function resetToConfig() {
+    clearInterval(state.timerId);
+    clearInterval(state.accusationTimerId);
+    $("bg-music").pause();
+    switchScreen("config-screen");
+  }
+
+  // --- Eventos de interfaz ---
+  document.addEventListener("DOMContentLoaded", () => {
+    $("btn-splash-continue").addEventListener("click", () => {
+      switchScreen("config-screen");
+      updatePlayerListConfig();
+    });
+
+    $("btn-splash-how").addEventListener("click", () => {
+      alert(
+        "1) Configura tiempo y jugadores.\n" +
+        "2) Cada jugador responde preguntas forenses por turnos.\n" +
+        "3) Cada acierto = +1 punto y desbloquea una pista.\n" +
+        "4) Al final, todos acusan al culpable del caso.\n" +
+        "5) Acertar culpable = +3 puntos, fallar = -1 punto."
+      );
+    });
+
+    $("select-players").addEventListener("change", updatePlayerListConfig);
+    $("btn-config-back").addEventListener("click", () => {
+      switchScreen("splash-screen");
+    });
+
+    $("btn-start-game").addEventListener("click", () => {
+      startGameFromConfig();
+    });
+
+    $("toggle-music").addEventListener("change", (e) => {
+      const music = $("bg-music");
+      if (e.target.checked) {
+        music.volume = 0.5;
+        music.play().catch(() => {});
+      } else {
+        music.pause();
+      }
+    });
+
+    $("btn-skip-question").addEventListener("click", () => {
+      handleAnswer(null);
+    });
+
+    $("btn-confirm-accusations").addEventListener("click", () => {
+      resolveAccusations();
+    });
+
+    $("btn-play-again").addEventListener("click", () => {
+      startGameFromConfig();
+    });
+
+    $("btn-back-to-config").addEventListener("click", () => {
+      resetToConfig();
+    });
+  });
+</script>
+</body>
+</html>
