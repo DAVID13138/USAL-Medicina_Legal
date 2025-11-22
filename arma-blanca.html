@@ -541,8 +541,8 @@
       Mapa visual + test interactivo para repasar los conceptos básicos de medicina legal y ciencias forenses.
     </p>
     <div class="splash-meta">
-      <p><strong>Alumno/a:</strong> TU NOMBRE AQUÍ</p>
-      <p><strong>Curso / grupo:</strong> TU CURSO / GRUPO AQUÍ<br>
+      <p><strong>Alumno/a:</strong> Nº47 Sc: 2ºB USAL</p>
+      <p><strong>Curso / grupo:</strong> MEDICINA LEGAL<br>
          <strong>Unidad:</strong> Lesiones por arma blanca</p>
       <p style="margin-top:6px;">Actualización: <span id="splash-date"></span></p>
     </div>
@@ -709,7 +709,7 @@
     <div class="quiz-header">
       <h2 class="quiz-title">Test interactivo: ¿Qué sabes de las lesiones por arma blanca?</h2>
       <div class="quiz-meta">
-        <span class="quiz-counter" id="quiz-counter">Pregunta 1 / 10</span>
+        <span class="quiz-counter" id="quiz-counter">Pregunta 1 / 20</span>
         <span id="quiz-score-mini">Puntuación: 0</span>
       </div>
     </div>
@@ -741,6 +741,10 @@
         <p><strong>Calificación:</strong> <span id="cert-grade"></span></p>
         <p class="cert-footer">Fecha de realización: <span id="cert-date"></span></p>
       </div>
+      
+<button onclick="printCertificate()" class="btn btn-accent" style="margin-top:15px;">
+  🖨️ Imprimir certificado
+</button>
 
     </div>
   </section>
@@ -1066,7 +1070,7 @@
   });
 
   btnRestart.addEventListener("click", () => {
-    quizQuestions = shuffle(questions).slice(0, 10);
+    quizQuestions = shuffle(questions).slice(0, 20);
     currentIndex = 0;
     score = 0;
     btnRestart.style.display = "none";
@@ -1102,6 +1106,18 @@ document.getElementById("cert-grade").textContent = Math.round((score / max) * 1
 document.getElementById("cert-date").textContent = new Date().toLocaleDateString();
 
   }
+  
+function printCertificate() {
+
+  // Si no ha terminado el test (no aparece el certificado todavía)
+  if (document.getElementById("certificate").style.display !== "block") {
+    alert("⚠️ Debes completar primero el test para poder imprimir tu certificado.");
+    return;
+  }
+
+  // Si ya terminó el test → imprime
+  window.print();
+}
 
   // Inicializar
   renderQuestion();
@@ -1109,6 +1125,7 @@ document.getElementById("cert-date").textContent = new Date().toLocaleDateString
 
 </body>
 </html>
+
 
 
 
