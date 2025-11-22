@@ -511,6 +511,23 @@
   </style>
 </head>
 <body>
+  <div class="splash" id="splash">
+  <div class="splash-card">
+    <div class="tag" style="margin-bottom:10px;"><span></span> Módulo interactivo de medicina legal</div>
+    <h1 class="splash-title">LESIONES POR ARMA BLANCA</h1>
+    <p class="splash-sub">
+      Mapa visual + test interactivo para repasar los conceptos básicos de medicina legal y ciencias forenses.
+    </p>
+    <div class="splash-meta">
+      <p><strong>Alumno/a:</strong> TU NOMBRE AQUÍ</p>
+      <p><strong>Curso / grupo:</strong> TU CURSO / GRUPO AQUÍ<br>
+         <strong>Unidad:</strong> Lesiones por arma blanca</p>
+      <p style="margin-top:6px;">Actualización: <span id="splash-date"></span></p>
+    </div>
+    <button class="splash-btn" id="splash-enter">Entrar al módulo</button>
+  </div>
+</div>
+
 <div class="page">
   <header>
     <div class="title-block">
@@ -693,6 +710,16 @@
         <button class="btn" id="quiz-restart" style="display:none;">Reiniciar test ↺</button>
       </div>
       <div class="quiz-final" id="quiz-final" style="display:none;"></div>
+            <div id="certificate" class="certificate" style="display:none;">
+        <h3>CERTIFICADO DE APROVECHAMIENTO</h3>
+        <p><strong>Alumno/a:</strong> ALUMNO Nº47 2ºB USAL</p>
+        <p><strong>Curso:</strong> MEDICINA LEGAL</p>
+        <p><strong>Unidad didáctica:</strong> Lesiones por arma blanca</p>
+        <p><strong>Resultado:</strong> <span id="cert-result"></span></p>
+        <p><strong>Calificación:</strong> <span id="cert-grade"></span></p>
+        <p class="cert-footer">Fecha de realización: <span id="cert-date"></span></p>
+      </div>
+
     </div>
   </section>
 </div>
@@ -810,6 +837,57 @@
       correct: 0,
       explanation: "La combinación de borde afilado y trayecto profundo es típica de las armas corto-punzantes."
     }
+    {
+  text: "La presencia de coágulos en el fondo de la herida indica que:",
+  options: [
+    "La herida se produjo post-mortem",
+    "La lesión se produjo en vida",
+    "La herida fue artificial"
+  ],
+  correct: 1,
+  explanation: "La presencia de coágulos y reacción tisular indica lesión en vida (diagnóstico vital positivo)."
+},
+{
+  text: "Una herida incisa con bordes muy limpios y sin contusión alrededor es típica de:",
+  options: [
+    "Un arma punzante",
+    "Un arma cortante afilada",
+    "Un objeto contundente romo"
+  ],
+  correct: 1,
+  explanation: "Las armas cortantes dejan bordes limpios y bien definidos sin aplastamiento."
+},
+{
+  text: "¿Qué tipo de herida es más probable que cause hemorragia externa abundante?",
+  options: [
+    "Punzante profunda",
+    "Cortante superficial extensa",
+    "Contusa"
+  ],
+  correct: 1,
+  explanation: "Las heridas cortantes largas afectan muchos vasos superficiales y suelen sangrar mucho."
+},
+{
+  text: "El hallazgo de heridas defensivas indica: ",
+  options: [
+    "Suicidio",
+    "Accidente",
+    "Intento de protegerse de una agresión"
+  ],
+  correct: 2,
+  explanation: "Las heridas defensivas aparecen cuando la víctima intenta protegerse ante un ataque."
+},
+{
+  text: "Un solo corte profundo en cuello, en persona diestra, sugiere más probablemente:",
+  options: [
+    "Suicidio",
+    "Homicidio",
+    "Accidente laboral"
+  ],
+  correct: 0,
+  explanation: "Las lesiones suicidas suelen localizarse en zonas accesibles y en dirección compatible con la mano dominante."
+}
+
   ];
 
   // Barajar array (Fisher–Yates)
@@ -952,6 +1030,7 @@
 
 </body>
 </html>
+
 
 
 
