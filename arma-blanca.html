@@ -452,7 +452,7 @@
       padding: 7px 9px;
       font-size: 0.85rem;
       text-align: left;
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.08);
       cursor: pointer;
       display: flex;
       gap: 8px;
@@ -473,18 +473,18 @@
     }
 
     .quiz-option:hover {
-      background: rgba(255, 255, 255, 0.24);
+      background: rgba(255, 255, 255, 0.20);
       transform: translateY(-1px);
     }
 
     .quiz-option.correct {
       border-color: #45e0a8;
-      background: rgba(69, 224, 168, 0.18);
+      background: rgba(69, 224, 168, 0.28);
     }
 
     .quiz-option.incorrect {
       border-color: #ff5678;
-      background: rgba(255, 86, 120, 0.18);
+      background: rgba(255, 86, 120, 0.28);
     }
 
     .quiz-feedback {
@@ -562,11 +562,11 @@
       <div class="splash-form">
         <label>
           Nombre del alumno/a
-          <input id="input-alumno" type="text" placeholder="Nombre y apellidos o código de alumno">
+          <input id="input-alumno" type="text" placeholder="Ej: Nº47 Sc 2ºB USAL">
         </label>
         <label>
           Curso / grupo
-          <input id="input-curso" type="text" placeholder="Ej: 2º Medicina · Grupo B">
+          <input id="input-curso" type="text" placeholder="Ej: MEDICINA LEGAL">
         </label>
       </div>
 
@@ -1174,6 +1174,7 @@
     const splashEnter = document.getElementById("splash-enter");
     if (splashEnter) {
       splashEnter.addEventListener("click", () => {
+        // Sincronizar nombre / curso con portada y certificado
         syncStudentData();
         document.querySelector(".page").scrollIntoView({ behavior: "smooth" });
       });
@@ -1181,5 +1182,3 @@
   </script>
 </body>
 </html>
-
-
